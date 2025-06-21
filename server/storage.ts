@@ -14,14 +14,10 @@ import { eq, and } from "drizzle-orm";
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
-  getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserLastLogin(id: number): Promise<User | undefined>;
-  
-  // OTP operations
-  createOtp(otp: InsertOtp): Promise<OtpVerification>;
-  getValidOtp(phoneNumber: string, otp: string): Promise<OtpVerification | undefined>;
-  markOtpAsUsed(id: number): Promise<void>;
 
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;
@@ -96,6 +92,23 @@ export class MemStorage implements IStorage {
   }
 
   private initializeSampleData() {
+    // Create default admin user (password: admin123)
+    // Using a pre-computed hash for "admin123"
+    const defaultAdmin: User = {
+      id: 1,
+      username: "admin",
+      email: "admin@restaurant.com",
+      password: "9eb3eedafa493fc3e37bd3ee93fdef8478a19c5f0a57aeed41f0c8431ed01f19a19249ce238ab0fa0c3f1dd5b444f1c22c403cd33c5cf03b8032325e9b87aa1f.3e7e692ab6cdf3504458afcb07576a37",
+      name: "Restaurant Admin",
+      role: "ADMIN",
+      isActive: true,
+      lastLoginAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.users.set(1, defaultAdmin);
+    this.currentIds.user = 2;
+
     // Create default restaurant
     const restaurant: Restaurant = {
       id: 1,
@@ -228,16 +241,24 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.phoneNumber === phoneNumber);
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.user++;
     const user: User = { 
-      ...insertUser, 
       id,
-      isVerified: true,
+      username: insertUser.username,
+      email: insertUser.email,
+      password: insertUser.password,
+      name: insertUser.name || null,
+      role: insertUser.role || "CUSTOMER",
+      isActive: true,
       lastLoginAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date()

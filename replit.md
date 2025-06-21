@@ -124,8 +124,9 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Implemented QR code generation system with downloadable table-specific codes
 - June 21, 2025: Added performance optimizations for handling 100+ simultaneous orders
 - June 21, 2025: Created production deployment configuration with security enhancements
-- June 21, 2025: Implemented SMS OTP authentication system with phone number login for customers and admins
-- June 21, 2025: Added user role management (CUSTOMER/ADMIN) with persistent login sessions
+- June 21, 2025: Replaced SMS OTP with username/password authentication system
+- June 21, 2025: Added email signup with email taken validation and secure password hashing
+- June 21, 2025: Implemented unified login form for both customers and admins with role-based redirection
 
 ## Production Deployment
 

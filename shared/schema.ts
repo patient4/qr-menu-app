@@ -4,11 +4,13 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  phoneNumber: text("phone_number").unique().notNull(),
-  role: text("role").notNull().default("CUSTOMER"), // CUSTOMER or ADMIN
+  username: text("username").unique().notNull(),
+  email: text("email").unique().notNull(),
+  password: text("password").notNull(),
   name: text("name"),
+  role: text("role").notNull().default("CUSTOMER"), // CUSTOMER or ADMIN
+  isActive: boolean("is_active").default(true),
   lastLoginAt: timestamp("last_login_at"),
-  isVerified: boolean("is_verified").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -117,15 +119,23 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  phoneNumber: true,
-  role: true,
+  username: true,
+  email: true,
+  password: true,
   name: true,
+  role: true,
 });
 
-export const insertOtpSchema = createInsertSchema(otpVerifications).pick({
-  phoneNumber: true,
-  otp: true,
-  expiresAt: true,
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const signupSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().optional(),
 });
 
 export type OtpVerification = typeof otpVerifications.$inferSelect;

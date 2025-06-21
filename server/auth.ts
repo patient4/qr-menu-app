@@ -1,118 +1,175 @@
 import { Express } from "express";
 import { storage } from "./storage";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { loginSchema, signupSchema } from "@shared/schema";
 
-// Simple OTP storage for development
-const otpStore = new Map<string, { otp: string; expiresAt: Date; userType: string }>();
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
 
 export function setupAuthRoutes(app: Express) {
-  // Send OTP
-  app.post("/api/auth/send-otp", async (req, res) => {
+  // Login
+  app.post("/api/auth/login", async (req, res) => {
     try {
-      const { phoneNumber, userType } = req.body;
-      
-      if (!phoneNumber || !userType) {
-        return res.status(400).json({ message: "Phone number and user type are required" });
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error.issues });
       }
 
-      // Generate 6-digit OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      const { username, password } = result.data;
 
-      // Store OTP temporarily
-      otpStore.set(phoneNumber, { otp, expiresAt, userType });
-
-      // Log OTP for development
-      console.log(`🔐 OTP for ${phoneNumber}: ${otp}`);
-      
-      res.json({ 
-        message: "OTP sent successfully",
-        ...(process.env.NODE_ENV === "development" && { otp })
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to send OTP" });
-    }
-  });
-
-  // Verify OTP and login
-  app.post("/api/auth/verify-otp", async (req, res) => {
-    try {
-      const { phoneNumber, otp, name, userType } = req.body;
-      
-      if (!phoneNumber || !otp || !userType) {
-        return res.status(400).json({ message: "Phone number, OTP, and user type are required" });
-      }
-
-      // Check stored OTP
-      const storedOtp = otpStore.get(phoneNumber);
-      if (!storedOtp || storedOtp.otp !== otp || new Date() > storedOtp.expiresAt) {
-        return res.status(400).json({ message: "Invalid or expired OTP" });
-      }
-
-      // Remove used OTP
-      otpStore.delete(phoneNumber);
-
-      // Check if user exists
-      let user = await storage.getUserByPhoneNumber(phoneNumber);
-      
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
       if (!user) {
-        // Create new user
-        user = await storage.createUser({
-          phoneNumber,
-          role: userType,
-          name: name || null,
-        });
-      } else {
-        // Update last login
-        await storage.updateUserLastLogin(user.id);
+        return res.status(401).json({ message: "Invalid username or password" });
       }
+
+      // Check password
+      const isValidPassword = await comparePasswords(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      // Update last login
+      await storage.updateUserLastLogin(user.id);
 
       res.json({
         id: user.id,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
+        username: user.username,
+        email: user.email,
         name: user.name,
+        role: user.role,
         message: "Login successful"
       });
     } catch (error) {
-      console.error("Auth error:", error);
-      res.status(500).json({ message: "Failed to verify OTP" });
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
     }
   });
 
-  // Admin creation
-  app.post("/api/admin/create", async (req, res) => {
+  // Signup
+  app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { phoneNumber, name } = req.body;
-      
-      if (!phoneNumber) {
-        return res.status(400).json({ message: "Phone number is required" });
+      const result = signupSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error.issues });
       }
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByPhoneNumber(phoneNumber);
-      if (existingUser) {
-        return res.status(400).json({ message: "User with this phone number already exists" });
+      const { username, email, password, name } = result.data;
+
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
       }
 
-      // Generate OTP for admin creation
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
 
-      otpStore.set(phoneNumber, { otp, expiresAt, userType: "ADMIN" });
+      // Hash password
+      const hashedPassword = await hashPassword(password);
 
-      console.log(`🔐 Admin OTP for ${phoneNumber}: ${otp}`);
-      
-      res.json({ 
-        message: "Admin OTP sent successfully",
-        ...(process.env.NODE_ENV === "development" && { otp })
+      // Create user
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        name: name || null,
+        role: "CUSTOMER", // Default role
+      });
+
+      res.status(201).json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        message: "Account created successfully"
       });
     } catch (error) {
-      res.status(500).json({ message: "Failed to create admin" });
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
+  });
+
+  // Create admin user
+  app.post("/api/auth/create-admin", async (req, res) => {
+    try {
+      const result = signupSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid input", errors: result.error.issues });
+      }
+
+      const { username, email, password, name } = result.data;
+
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      // Create admin user
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        name: name || null,
+        role: "ADMIN",
+      });
+
+      res.status(201).json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        message: "Admin account created successfully"
+      });
+    } catch (error) {
+      console.error("Admin creation error:", error);
+      res.status(500).json({ message: "Failed to create admin account" });
     }
   });
 
   // Logout
   app.post("/api/auth/logout", async (req, res) => {
     res.json({ message: "Logout successful" });
+  });
+
+  // Debug endpoint to check users
+  app.get("/api/auth/debug", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername("admin");
+      res.json({ 
+        userFound: !!user,
+        userData: user ? { id: user.id, username: user.username, role: user.role } : null 
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   });
 }

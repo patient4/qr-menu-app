@@ -1,13 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AuthLogin from "@/components/AuthLogin";
+import AuthForm from "@/components/AuthForm";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const [userType, setUserType] = useState<"CUSTOMER" | "ADMIN">("CUSTOMER");
 
   // Check if user is already logged in
   useEffect(() => {
@@ -43,44 +39,13 @@ export default function LoginPage() {
             🌶️ Icy Spicy Tadka
           </h1>
           <p className="text-gray-600">Pure Vegetarian Restaurant</p>
+          <div className="mt-4 text-sm text-gray-500">
+            <p>Everyone can login with username and password.</p>
+            <p>Admin users will see admin features automatically.</p>
+          </div>
         </div>
 
-        <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>
-              Sign in with your phone number to continue
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={userType} onValueChange={(value) => setUserType(value as "CUSTOMER" | "ADMIN")}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="CUSTOMER">Customer</TabsTrigger>
-                <TabsTrigger value="ADMIN">Admin</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="CUSTOMER" className="space-y-4">
-                <div className="text-center text-sm text-gray-600 mb-4">
-                  <p>Browse our delicious menu and place orders</p>
-                </div>
-                <AuthLogin onLogin={handleLogin} userType="CUSTOMER" />
-              </TabsContent>
-              
-              <TabsContent value="ADMIN" className="space-y-4">
-                <div className="text-center text-sm text-gray-600 mb-4">
-                  <p>Manage orders and restaurant operations</p>
-                </div>
-                <AuthLogin onLogin={handleLogin} userType="ADMIN" />
-              </TabsContent>
-            </Tabs>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">
-                New to Icy Spicy Tadka? Your account will be created automatically
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <AuthForm onLogin={handleLogin} />
 
         <div className="mt-6 text-center">
           <Link href="/customer" className="text-sm text-orange-600 hover:underline">
