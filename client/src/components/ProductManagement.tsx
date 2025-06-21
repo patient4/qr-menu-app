@@ -47,7 +47,9 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productFormSchema),
-    mode: "onSubmit", // Prevent validation on every change
+    mode: "onSubmit",
+    reValidateMode: "onSubmit", // Only validate on submit
+    shouldFocusError: false, // Prevent auto-focus issues
     defaultValues: {
       restaurantId,
       name: "",
@@ -151,18 +153,55 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
     },
   });
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        const maxWidth = 400;
+        const maxHeight = 300;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Only show preview, don't include large base64 in form data
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      
-      // For now, just use a placeholder URL - image upload can be implemented separately
-      form.setValue("imageUrl", `https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200`);
+      try {
+        const compressedImage = await compressImage(file);
+        setImagePreview(compressedImage);
+        form.setValue("imageUrl", compressedImage);
+      } catch (error) {
+        toast({
+          title: "Error processing image",
+          description: "Please try a different image.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -227,7 +266,16 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form 
+            onSubmit={form.handleSubmit(onSubmit)} 
+            className="space-y-6"
+            onKeyDown={(e) => {
+              // Prevent form submission on Enter key except for submit button
+              if (e.key === 'Enter' && e.target !== e.currentTarget) {
+                e.preventDefault();
+              }
+            }}
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Product Image */}
               <div className="space-y-4">
