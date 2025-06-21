@@ -57,11 +57,37 @@ export default function AdminApp() {
           title: "New Order Received!",
           description: `Order #${message.data.orderNumber} from ${message.data.orderType === 'dine-in' ? `Table ${message.data.tableNumber}` : 'Takeaway'}`,
         });
-        queryClient.invalidateQueries({ queryKey: [`/api/restaurant/${restaurantId}/orders`] });
+        
+        // Update orders cache directly for instant update
+        queryClient.setQueryData([`/api/restaurant/${restaurantId}/orders`], (oldData: any) => {
+          return oldData ? [message.data, ...oldData] : [message.data];
+        });
+        
+        // Invalidate stats for updated revenue
         queryClient.invalidateQueries({ queryKey: [`/api/restaurant/${restaurantId}/stats`] });
         break;
+        
       case 'ORDER_STATUS_UPDATE':
-        queryClient.invalidateQueries({ queryKey: [`/api/restaurant/${restaurantId}/orders`] });
+        // Update orders cache directly for instant status change
+        queryClient.setQueryData([`/api/restaurant/${restaurantId}/orders`], (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.map((order: any) => 
+            order.id === message.data.id ? message.data : order
+          );
+        });
+        
+        // Also update individual order cache if it exists
+        queryClient.setQueryData([`/api/orders/${message.data.id}`], message.data);
+        
+        // Update order by number cache for customer tracking
+        if (message.data.orderNumber) {
+          queryClient.setQueryData([`/api/orders/by-number/${message.data.orderNumber}`], message.data);
+        }
+        
+        toast({
+          title: "Order Updated",
+          description: `Order #${message.data.orderNumber} is now ${message.data.status}`,
+        });
         break;
     }
   });

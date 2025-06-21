@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,17 +20,20 @@ export default function OrderProgress({ orderNumber }: OrderProgressProps) {
   const [hasNewUpdate, setHasNewUpdate] = useState(false);
 
   // Fetch order details
-  const { data: order, refetch } = useQuery<Order>({
+  const { data: order } = useQuery<Order>({
     queryKey: [`/api/orders/by-number/${orderNumber}`],
     enabled: !!orderNumber,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    // Remove polling - use WebSocket for real-time updates
   });
 
   // WebSocket for real-time updates
   useWebSocket((message) => {
-    if (message.type === "orderStatusUpdate" && message.data.orderNumber === orderNumber) {
+    if (message.type === "ORDER_STATUS_UPDATE" && message.data.orderNumber === orderNumber) {
       setHasNewUpdate(true);
-      refetch();
+      
+      // Update cache directly for instant update
+      queryClient.setQueryData([`/api/orders/by-number/${orderNumber}`], message.data);
+      queryClient.setQueryData([`/api/orders/${message.data.id}`], message.data);
     }
   });
 
