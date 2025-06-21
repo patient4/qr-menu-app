@@ -1,10 +1,11 @@
 import { 
-  users, restaurants, menuCategories, menuItems, orders,
+  users, restaurants, menuCategories, menuItems, orders, otpVerifications,
   type User, type InsertUser,
   type Restaurant, type InsertRestaurant,
   type MenuCategory, type InsertMenuCategory,
   type MenuItem, type InsertMenuItem,
   type Order, type InsertOrder,
+  type OtpVerification, type InsertOtp,
   ORDER_STATUSES
 } from "@shared/schema";
 import { db } from "./db";
@@ -13,8 +14,14 @@ import { eq, and } from "drizzle-orm";
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(id: number): Promise<User | undefined>;
+  
+  // OTP operations
+  createOtp(otp: InsertOtp): Promise<OtpVerification>;
+  getValidOtp(phoneNumber: string, otp: string): Promise<OtpVerification | undefined>;
+  markOtpAsUsed(id: number): Promise<void>;
 
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;
@@ -58,12 +65,14 @@ export class MemStorage implements IStorage {
   private menuCategories: Map<number, MenuCategory>;
   private menuItems: Map<number, MenuItem>;
   private orders: Map<number, Order>;
+  private otps: Map<number, OtpVerification>;
   private currentIds: {
     user: number;
     restaurant: number;
     menuCategory: number;
     menuItem: number;
     order: number;
+    otp: number;
   };
 
   constructor() {
@@ -72,12 +81,14 @@ export class MemStorage implements IStorage {
     this.menuCategories = new Map();
     this.menuItems = new Map();
     this.orders = new Map();
+    this.otps = new Map();
     this.currentIds = {
       user: 1,
       restaurant: 1,
       menuCategory: 1,
       menuItem: 1,
       order: 1,
+      otp: 1,
     };
 
     // Initialize with sample data
@@ -217,15 +228,67 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+  async getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.phoneNumber === phoneNumber);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.user++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      isVerified: true,
+      lastLoginAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserLastLogin(id: number): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updated: User = { ...user, lastLoginAt: new Date() };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async createOtp(otp: InsertOtp): Promise<OtpVerification> {
+    const id = this.currentIds.otp || 1;
+    this.currentIds.otp = id + 1;
+    
+    const otpRecord: OtpVerification = {
+      ...otp,
+      id,
+      isUsed: false,
+      createdAt: new Date()
+    };
+    
+    if (!this.otps) this.otps = new Map();
+    this.otps.set(id, otpRecord);
+    return otpRecord;
+  }
+
+  async getValidOtp(phoneNumber: string, otp: string): Promise<OtpVerification | undefined> {
+    if (!this.otps) return undefined;
+    
+    return Array.from(this.otps.values()).find(record => 
+      record.phoneNumber === phoneNumber && 
+      record.otp === otp && 
+      !record.isUsed && 
+      new Date() < record.expiresAt
+    );
+  }
+
+  async markOtpAsUsed(id: number): Promise<void> {
+    if (!this.otps) return;
+    
+    const otp = this.otps.get(id);
+    if (otp) {
+      this.otps.set(id, { ...otp, isUsed: true });
+    }
   }
 
   // Restaurant operations

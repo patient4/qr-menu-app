@@ -4,8 +4,22 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  phoneNumber: text("phone_number").unique().notNull(),
+  role: text("role").notNull().default("CUSTOMER"), // CUSTOMER or ADMIN
+  name: text("name"),
+  lastLoginAt: timestamp("last_login_at"),
+  isVerified: boolean("is_verified").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const otpVerifications = pgTable("otp_verifications", {
+  id: serial("id").primaryKey(),
+  phoneNumber: text("phone_number").notNull(),
+  otp: text("otp").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isUsed: boolean("is_used").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const restaurants = pgTable("restaurants", {
@@ -103,9 +117,19 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+  phoneNumber: true,
+  role: true,
+  name: true,
 });
+
+export const insertOtpSchema = createInsertSchema(otpVerifications).pick({
+  phoneNumber: true,
+  otp: true,
+  expiresAt: true,
+});
+
+export type OtpVerification = typeof otpVerifications.$inferSelect;
+export type InsertOtp = z.infer<typeof insertOtpSchema>;
 
 // Types
 export type Restaurant = typeof restaurants.$inferSelect;

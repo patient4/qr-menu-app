@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertOrderSchema, ORDER_STATUSES } from "@shared/schema";
+import { setupAuthRoutes } from "./auth";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -446,6 +447,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to generate QR code" });
     }
   });
+
+  // Setup authentication routes
+  setupAuthRoutes(app);
 
   return httpServer;
 }
