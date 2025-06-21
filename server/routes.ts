@@ -386,6 +386,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 'suspend':
           updateData = { isActive: false };
           break;
+        case 'expire_trial':
+          updateData = { 
+            isActive: false,
+            planType: "expired",
+            subscriptionEndDate: new Date(now.getTime() - 1000) // 1 second ago
+          };
+          break;
         case 'extend_trial':
           updateData = { 
             subscriptionEndDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days

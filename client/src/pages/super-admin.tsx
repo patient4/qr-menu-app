@@ -32,7 +32,8 @@ import {
   Phone,
   Mail,
   Crown,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Restaurant } from "@shared/schema";
@@ -454,6 +455,15 @@ export default function SuperAdminApp() {
                                 disabled={subscriptionMutation.isPending}
                               >
                                 <Clock className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleSubscriptionAction(restaurant.id, 'expire_trial')}
+                                disabled={subscriptionMutation.isPending}
+                                title="Expire Trial (For Testing)"
+                              >
+                                <X className="h-3 w-3" />
                               </Button>
                             </div>
                           </TableCell>

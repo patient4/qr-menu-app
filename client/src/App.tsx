@@ -7,6 +7,7 @@ import CustomerApp from "@/pages/customer";
 import AdminApp from "@/pages/admin";
 import RestaurantPortal from "@/pages/portal";
 import SuperAdminApp from "@/pages/super-admin";
+import TestSubscription from "@/pages/test-subscription";
 import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/customer" component={CustomerApp} />
       <Route path="/portal" component={RestaurantPortal} />
       <Route path="/super-admin" component={SuperAdminApp} />
+      <Route path="/test-subscription" component={TestSubscription} />
       <Route component={NotFound} />
     </Switch>
   );

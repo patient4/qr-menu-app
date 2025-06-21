@@ -132,6 +132,8 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Added platform-wide analytics, restaurant management, and subscription controls
 - June 21, 2025: Implemented streamlined guest welcome flow - name entry with sweet welcome animation
 - June 21, 2025: Removed login complexity for customers - simple name capture creates personalized ordering experience
+- June 21, 2025: Added subscription testing tools - expire trial, suspend/activate restaurants to test access restrictions
+- June 21, 2025: Created dedicated testing interface at /test-subscription for validating subscription controls
 
 ## Production Deployment
 

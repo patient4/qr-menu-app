@@ -53,6 +53,12 @@ export interface IStorage {
   // Super Admin operations
   getAllRestaurants(): Promise<Restaurant[]>;
   getAllOrders(): Promise<Order[]>;
+  
+  // Subscription management
+  expireRestaurantTrial(restaurantId: number): Promise<Restaurant | undefined>;
+  suspendRestaurant(restaurantId: number): Promise<Restaurant | undefined>;
+  activateRestaurant(restaurantId: number): Promise<Restaurant | undefined>;
+  checkRestaurantAccess(restaurantId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -536,6 +542,73 @@ export class MemStorage implements IStorage {
   async getAllOrders(): Promise<Order[]> {
     return Array.from(this.orders.values())
       .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async expireRestaurantTrial(restaurantId: number): Promise<Restaurant | undefined> {
+    const restaurant = this.restaurants.get(restaurantId);
+    if (!restaurant) return undefined;
+
+    const expired: Restaurant = {
+      ...restaurant,
+      subscriptionEndDate: new Date(Date.now() - 1000), // Set to 1 second ago
+      planType: "expired",
+      isActive: false,
+      updatedAt: new Date()
+    };
+
+    this.restaurants.set(restaurantId, expired);
+    return expired;
+  }
+
+  async suspendRestaurant(restaurantId: number): Promise<Restaurant | undefined> {
+    const restaurant = this.restaurants.get(restaurantId);
+    if (!restaurant) return undefined;
+
+    const suspended: Restaurant = {
+      ...restaurant,
+      isActive: false,
+      planType: "suspended",
+      updatedAt: new Date()
+    };
+
+    this.restaurants.set(restaurantId, suspended);
+    return suspended;
+  }
+
+  async activateRestaurant(restaurantId: number): Promise<Restaurant | undefined> {
+    const restaurant = this.restaurants.get(restaurantId);
+    if (!restaurant) return undefined;
+
+    const activated: Restaurant = {
+      ...restaurant,
+      isActive: true,
+      planType: "active",
+      subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      updatedAt: new Date()
+    };
+
+    this.restaurants.set(restaurantId, activated);
+    return activated;
+  }
+
+  async checkRestaurantAccess(restaurantId: number): Promise<boolean> {
+    const restaurant = this.restaurants.get(restaurantId);
+    if (!restaurant) return false;
+
+    // Check if restaurant is active
+    if (!restaurant.isActive) return false;
+
+    // Check if subscription has expired
+    if (restaurant.subscriptionEndDate && new Date() > restaurant.subscriptionEndDate) {
+      return false;
+    }
+
+    // Check if plan is suspended or expired
+    if (restaurant.planType === "suspended" || restaurant.planType === "expired") {
+      return false;
+    }
+
+    return true;
   }
 }
 
