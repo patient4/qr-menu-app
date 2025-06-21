@@ -37,7 +37,7 @@ export default function CustomerApp() {
   const { toast } = useToast();
   const restaurantId = restaurantConfig.id;
 
-  // Extract table number from URL parameters
+  // Persistent order tracking for guests and logged-in users
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tableParam = urlParams.get('table');
@@ -45,12 +45,26 @@ export default function CustomerApp() {
       setTableNumber(tableParam);
       setOrderType('dine-in');
     }
+
+    // Restore order tracking from localStorage
+    const savedOrderNumber = localStorage.getItem('currentOrderNumber');
+    const savedOrderStatus = localStorage.getItem('currentOrderStatus');
+    const savedEstimatedTime = localStorage.getItem('estimatedTime');
+    
+    if (savedOrderNumber) {
+      setCurrentOrderNumber(savedOrderNumber);
+      setOrderStatus(savedOrderStatus || 'pending');
+      setEstimatedTime(parseInt(savedEstimatedTime || '0'));
+    }
   }, []);
 
   // WebSocket for real-time order updates
   useWebSocket((message) => {
     if (message.type === "ORDER_STATUS_UPDATE" && message.data.orderNumber === currentOrderNumber) {
       setOrderStatus(message.data.status);
+      
+      // Persist order tracking data
+      localStorage.setItem('currentOrderStatus', message.data.status);
       
       // Update cache directly for instant UI updates
       queryClient.setQueryData([`/api/orders/by-number/${currentOrderNumber}`], message.data);
@@ -180,6 +194,13 @@ export default function CustomerApp() {
       setCart([]);
       setIsCartOpen(false);
       setCurrentOrderNumber(data.orderNumber);
+      setOrderStatus('pending');
+      
+      // Persist order tracking data for reload persistence
+      localStorage.setItem('currentOrderNumber', data.orderNumber);
+      localStorage.setItem('currentOrderStatus', 'pending');
+      localStorage.setItem('estimatedTime', '20');
+      
       toast({
         title: "Order placed successfully!",
         description: "Your order has been sent to the kitchen. Track your progress with the floating button.",

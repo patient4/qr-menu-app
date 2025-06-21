@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import CustomerApp from "@/pages/customer";
 import AdminApp from "@/pages/admin";
 import RestaurantPortal from "@/pages/portal";
+import SuperAdminApp from "@/pages/super-admin";
 import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/admin" component={AdminApp} />
       <Route path="/customer" component={CustomerApp} />
       <Route path="/portal" component={RestaurantPortal} />
+      <Route path="/super-admin" component={SuperAdminApp} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -127,6 +127,9 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Replaced SMS OTP with username/password authentication system
 - June 21, 2025: Added email signup with email taken validation and secure password hashing
 - June 21, 2025: Implemented unified login form for both customers and admins with role-based redirection
+- June 21, 2025: Fixed order tracking persistence - bottom tracking remains after page reload for guests and logged-in users
+- June 21, 2025: Created comprehensive Super Admin panel at /super-admin route for managing multiple restaurants
+- June 21, 2025: Added platform-wide analytics, restaurant management, and subscription controls
 
 ## Production Deployment
 

@@ -448,6 +448,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create restaurant (super admin)
+  app.post("/api/restaurants", async (req, res) => {
+    try {
+      const restaurant = await storage.createRestaurant(req.body);
+      res.status(201).json(restaurant);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create restaurant" });
+    }
+  });
+
   // Setup authentication routes
   setupAuthRoutes(app);
 
