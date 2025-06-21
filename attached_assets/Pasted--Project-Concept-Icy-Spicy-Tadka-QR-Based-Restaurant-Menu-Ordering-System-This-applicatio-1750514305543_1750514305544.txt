@@ -1,0 +1,36 @@
+# 🍽️ Project Concept: Icy Spicy Tadka - QR-Based Restaurant Menu & Ordering System
+
+This application envisions a digital transformation for a pure-veg restaurant named **Icy Spicy Tadka**, known for its homestyle food. The goal is to create a mobile-first experience that replaces printed menus and manual ordering with a sleek, responsive web app accessible through a QR code placed on tables.
+
+The platform consists of two main components:
+
+### 1. **Mobile-first Customer App**
+A responsive, app-like interface optimized for smartphones where diners can:
+- Scan a QR code to instantly view the full digital menu.
+- Browse dishes categorized (Parathas, Thali, Mocktails, etc.) with prices and descriptions.
+- Add items to a cart and place orders either for dine-in (with table number) or takeaway.
+- Experience a minimal yet vibrant UI that reflects the desi yet modern aesthetic of the brand.
+- Have their experience tailored dynamically based on a configuration file (like YAML or JSON).
+
+### 2. **Admin Dashboard**
+A separate interface, usually operated on a PC or tablet, enabling the restaurant staff to:
+- View live incoming orders in real-time.
+- Track the status of each order (pending, preparing, completed).
+- Analyze daily trends: number of orders, revenue, most popular items.
+- Export operational data (CSV reports) and manage system settings.
+- Enforce a 30-day free trial mode after which functionality pauses unless payment is received (₹4999/month).
+
+### 🔧 Configurability & Subscription Flow
+The app’s logic and branding elements are fully customizable from a central configuration file:
+- Change restaurant name, theme color, menu structure, etc.
+- Control order modes (dine-in/takeaway).
+- Enable or disable features based on a subscription model.
+- A clear separation between core logic and configuration ensures long-term maintainability.
+
+### 📦 Tech Stack Expectations
+The system should emphasize modularity, scalability, and real-time interaction potential. The app should feel native on mobile, yet function seamlessly across platforms. Components like live order tracking, offline-friendly UI, and backend analytics are critical. Codebases should be Git-ready, with two separate but interconnected repositories for the `customer-app` and `admin-dashboard`.
+
+This application is intended to be trial-friendly, cloud-deployable, and ideally compatible with environments like Replit for testing or lightweight self-hosted use.
+
+The menu structure and categories will be derived from an existing scanned image, representing a rich and diverse Indian vegetarian menu.
+
