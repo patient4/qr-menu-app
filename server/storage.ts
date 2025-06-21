@@ -1,0 +1,403 @@
+import { 
+  users, restaurants, menuCategories, menuItems, orders,
+  type User, type InsertUser,
+  type Restaurant, type InsertRestaurant,
+  type MenuCategory, type InsertMenuCategory,
+  type MenuItem, type InsertMenuItem,
+  type Order, type InsertOrder,
+  ORDER_STATUSES
+} from "@shared/schema";
+
+export interface IStorage {
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // Restaurant operations
+  getRestaurant(id: number): Promise<Restaurant | undefined>;
+  createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
+  updateRestaurant(id: number, restaurant: Partial<InsertRestaurant>): Promise<Restaurant | undefined>;
+  
+  // Menu category operations
+  getMenuCategories(restaurantId: number): Promise<MenuCategory[]>;
+  createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory>;
+  
+  // Menu item operations
+  getMenuItems(restaurantId: number, categoryId?: number): Promise<MenuItem[]>;
+  getMenuItem(id: number): Promise<MenuItem | undefined>;
+  createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined>;
+  
+  // Order operations
+  getOrders(restaurantId: number, status?: string): Promise<Order[]>;
+  getOrder(id: number): Promise<Order | undefined>;
+  getOrderByNumber(orderNumber: string): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
+  getTodayOrders(restaurantId: number): Promise<Order[]>;
+  
+  // Analytics
+  getTodayStats(restaurantId: number): Promise<{
+    orderCount: number;
+    revenue: number;
+    avgPrepTime: number;
+    popularItems: Array<{ name: string; count: number }>;
+  }>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private restaurants: Map<number, Restaurant>;
+  private menuCategories: Map<number, MenuCategory>;
+  private menuItems: Map<number, MenuItem>;
+  private orders: Map<number, Order>;
+  private currentIds: {
+    user: number;
+    restaurant: number;
+    menuCategory: number;
+    menuItem: number;
+    order: number;
+  };
+
+  constructor() {
+    this.users = new Map();
+    this.restaurants = new Map();
+    this.menuCategories = new Map();
+    this.menuItems = new Map();
+    this.orders = new Map();
+    this.currentIds = {
+      user: 1,
+      restaurant: 1,
+      menuCategory: 1,
+      menuItem: 1,
+      order: 1,
+    };
+
+    // Initialize with sample data
+    this.initializeSampleData();
+  }
+
+  private initializeSampleData() {
+    // Create default restaurant
+    const restaurant: Restaurant = {
+      id: 1,
+      name: "Icy Spicy Tadka",
+      primaryColor: "#FF6B35",
+      secondaryColor: "#C62828",
+      accentColor: "#FFB300",
+      tableCount: 15,
+      serviceCharge: "10.00",
+      gst: "5.00",
+      orderModes: ["dine-in", "takeaway"],
+      isActive: true,
+      subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      createdAt: new Date(),
+    };
+    this.restaurants.set(1, restaurant);
+    this.currentIds.restaurant = 2;
+
+    // Create menu categories
+    const categories: MenuCategory[] = [
+      { id: 1, restaurantId: 1, name: "Parathas", displayOrder: 1, isActive: true },
+      { id: 2, restaurantId: 1, name: "Thali", displayOrder: 2, isActive: true },
+      { id: 3, restaurantId: 1, name: "Dal & Curries", displayOrder: 3, isActive: true },
+      { id: 4, restaurantId: 1, name: "Snacks", displayOrder: 4, isActive: true },
+      { id: 5, restaurantId: 1, name: "Beverages", displayOrder: 5, isActive: true },
+      { id: 6, restaurantId: 1, name: "Desserts", displayOrder: 6, isActive: true },
+    ];
+    
+    categories.forEach(cat => this.menuCategories.set(cat.id, cat));
+    this.currentIds.menuCategory = 7;
+
+    // Create menu items
+    const items: MenuItem[] = [
+      {
+        id: 1, restaurantId: 1, categoryId: 1, name: "Butter Paratha", 
+        description: "Flaky, buttery layers of perfection", price: "45.00",
+        imageUrl: "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 10, displayOrder: 1
+      },
+      {
+        id: 2, restaurantId: 1, categoryId: 3, name: "Dal Makhani",
+        description: "Rich, creamy black lentils slow-cooked to perfection", price: "180.00",
+        imageUrl: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 20, displayOrder: 1
+      },
+      {
+        id: 3, restaurantId: 1, categoryId: 4, name: "Paneer Tikka",
+        description: "Marinated cottage cheese grilled to perfection", price: "220.00",
+        imageUrl: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 15, displayOrder: 1
+      },
+      {
+        id: 4, restaurantId: 1, categoryId: 3, name: "Rajma Chawal",
+        description: "Comfort food at its finest - kidney beans with rice", price: "160.00",
+        imageUrl: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 15, displayOrder: 2
+      },
+      {
+        id: 5, restaurantId: 1, categoryId: 5, name: "Mango Lassi",
+        description: "Refreshing blend of yogurt and sweet mangoes", price: "85.00",
+        imageUrl: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 5, displayOrder: 1
+      },
+      {
+        id: 6, restaurantId: 1, categoryId: 4, name: "Chole Bhature",
+        description: "Fluffy bread with spicy chickpea curry", price: "140.00",
+        imageUrl: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 18, displayOrder: 2
+      },
+      {
+        id: 7, restaurantId: 1, categoryId: 4, name: "Masala Dosa",
+        description: "Crispy rice crepe with spiced potato filling", price: "120.00",
+        imageUrl: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 12, displayOrder: 3
+      },
+      {
+        id: 8, restaurantId: 1, categoryId: 6, name: "Gulab Jamun",
+        description: "Soft milk dumplings in cardamom syrup", price: "60.00",
+        imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 5, displayOrder: 1
+      },
+    ];
+    
+    items.forEach(item => this.menuItems.set(item.id, item));
+    this.currentIds.menuItem = 9;
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentIds.user++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  // Restaurant operations
+  async getRestaurant(id: number): Promise<Restaurant | undefined> {
+    return this.restaurants.get(id);
+  }
+
+  async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
+    const id = this.currentIds.restaurant++;
+    const newRestaurant: Restaurant = { 
+      id, 
+      name: restaurant.name,
+      primaryColor: restaurant.primaryColor || "#FF6B35",
+      secondaryColor: restaurant.secondaryColor || "#C62828",
+      accentColor: restaurant.accentColor || "#FFB300",
+      tableCount: restaurant.tableCount || 15,
+      serviceCharge: restaurant.serviceCharge || "10.00",
+      gst: restaurant.gst || "5.00",
+      orderModes: restaurant.orderModes || ["dine-in", "takeaway"],
+      isActive: restaurant.isActive !== undefined ? restaurant.isActive : true,
+      subscriptionEndDate: restaurant.subscriptionEndDate || null,
+      createdAt: new Date() 
+    };
+    this.restaurants.set(id, newRestaurant);
+    return newRestaurant;
+  }
+
+  async updateRestaurant(id: number, restaurant: Partial<InsertRestaurant>): Promise<Restaurant | undefined> {
+    const existing = this.restaurants.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Restaurant = { ...existing, ...restaurant };
+    this.restaurants.set(id, updated);
+    return updated;
+  }
+
+  // Menu category operations
+  async getMenuCategories(restaurantId: number): Promise<MenuCategory[]> {
+    return Array.from(this.menuCategories.values())
+      .filter(cat => cat.restaurantId === restaurantId && cat.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  async createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory> {
+    const id = this.currentIds.menuCategory++;
+    const newCategory: MenuCategory = { 
+      id, 
+      restaurantId: category.restaurantId,
+      name: category.name,
+      displayOrder: category.displayOrder || 0,
+      isActive: category.isActive !== undefined ? category.isActive : true
+    };
+    this.menuCategories.set(id, newCategory);
+    return newCategory;
+  }
+
+  // Menu item operations
+  async getMenuItems(restaurantId: number, categoryId?: number): Promise<MenuItem[]> {
+    return Array.from(this.menuItems.values())
+      .filter(item => 
+        item.restaurantId === restaurantId && 
+        item.isAvailable &&
+        (categoryId ? item.categoryId === categoryId : true)
+      )
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+  }
+
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    return this.menuItems.get(id);
+  }
+
+  async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
+    const id = this.currentIds.menuItem++;
+    const newItem: MenuItem = { 
+      id,
+      restaurantId: item.restaurantId,
+      categoryId: item.categoryId,
+      name: item.name,
+      description: item.description || null,
+      price: item.price,
+      imageUrl: item.imageUrl || null,
+      isVeg: item.isVeg !== undefined ? item.isVeg : true,
+      isPopular: item.isPopular !== undefined ? item.isPopular : false,
+      isAvailable: item.isAvailable !== undefined ? item.isAvailable : true,
+      preparationTime: item.preparationTime || null,
+      displayOrder: item.displayOrder || 0
+    };
+    this.menuItems.set(id, newItem);
+    return newItem;
+  }
+
+  async updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
+    const existing = this.menuItems.get(id);
+    if (!existing) return undefined;
+    
+    const updated: MenuItem = {
+      ...existing,
+      name: item.name ?? existing.name,
+      description: item.description ?? existing.description,
+      price: item.price ?? existing.price,
+      imageUrl: item.imageUrl ?? existing.imageUrl,
+      isVeg: item.isVeg ?? existing.isVeg,
+      isPopular: item.isPopular ?? existing.isPopular,
+      isAvailable: item.isAvailable ?? existing.isAvailable,
+      preparationTime: item.preparationTime ?? existing.preparationTime,
+      displayOrder: item.displayOrder ?? existing.displayOrder,
+    };
+    this.menuItems.set(id, updated);
+    return updated;
+  }
+
+  // Order operations
+  async getOrders(restaurantId: number, status?: string): Promise<Order[]> {
+    return Array.from(this.orders.values())
+      .filter(order => 
+        order.restaurantId === restaurantId &&
+        (status ? order.status === status : true)
+      )
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
+
+  async getOrder(id: number): Promise<Order | undefined> {
+    return this.orders.get(id);
+  }
+
+  async getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
+    return Array.from(this.orders.values()).find(order => order.orderNumber === orderNumber);
+  }
+
+  async createOrder(orderData: InsertOrder): Promise<Order> {
+    const id = this.currentIds.order++;
+    const orderNumber = `ORD-${Date.now()}-${id}`;
+    const now = new Date();
+    
+    const order: Order = {
+      id,
+      restaurantId: orderData.restaurantId,
+      orderNumber,
+      tableNumber: orderData.tableNumber || null,
+      orderType: orderData.orderType,
+      status: orderData.status || "pending",
+      items: orderData.items as Array<{
+        id: number;
+        name: string;
+        price: string;
+        quantity: number;
+        total: string;
+      }>,
+      subtotal: orderData.subtotal,
+      serviceCharge: orderData.serviceCharge || "0.00",
+      gst: orderData.gst || "0.00",
+      total: orderData.total,
+      customerName: orderData.customerName || null,
+      customerPhone: orderData.customerPhone || null,
+      notes: orderData.notes || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    this.orders.set(id, order);
+    return order;
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const order = this.orders.get(id);
+    if (!order) return undefined;
+    
+    const updated: Order = {
+      ...order,
+      status,
+      updatedAt: new Date(),
+    };
+    
+    this.orders.set(id, updated);
+    return updated;
+  }
+
+  async getTodayOrders(restaurantId: number): Promise<Order[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return Array.from(this.orders.values())
+      .filter(order => 
+        order.restaurantId === restaurantId &&
+        order.createdAt && new Date(order.createdAt) >= today
+      );
+  }
+
+  async getTodayStats(restaurantId: number): Promise<{
+    orderCount: number;
+    revenue: number;
+    avgPrepTime: number;
+    popularItems: Array<{ name: string; count: number }>;
+  }> {
+    const todayOrders = await this.getTodayOrders(restaurantId);
+    
+    const orderCount = todayOrders.length;
+    const revenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+    
+    // Calculate average prep time (simplified)
+    const avgPrepTime = 12; // minutes - simplified for demo
+    
+    // Calculate popular items
+    const itemCounts = new Map<string, number>();
+    todayOrders.forEach(order => {
+      order.items.forEach(item => {
+        const currentCount = itemCounts.get(item.name) || 0;
+        itemCounts.set(item.name, currentCount + item.quantity);
+      });
+    });
+    
+    const popularItems = Array.from(itemCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+    
+    return { orderCount, revenue, avgPrepTime, popularItems };
+  }
+}
+
+export const storage = new MemStorage();

@@ -1,0 +1,22 @@
+{
+  "id": 1,
+  "name": "Icy Spicy Tadka",
+  "colors": {
+    "primary": "#FF6B35",
+    "secondary": "#C62828",
+    "accent": "#FFB300"
+  },
+  "settings": {
+    "tableCount": 15,
+    "serviceCharge": 10,
+    "gst": 5,
+    "orderModes": ["dine-in", "takeaway"],
+    "defaultTable": "5"
+  },
+  "features": {
+    "qrOrdering": true,
+    "realTimeUpdates": true,
+    "analytics": true,
+    "takeaway": true
+  }
+}
