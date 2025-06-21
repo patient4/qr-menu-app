@@ -110,10 +110,17 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Added comprehensive product management system with photo upload
 - June 21, 2025: Implemented subscription management with 30-day free trial
 - June 21, 2025: Created admin dashboard with product editing capabilities
+- June 21, 2025: Added restaurant management portal for multi-restaurant control
+- June 21, 2025: Implemented admin notifications with sound alerts for new orders
+- June 21, 2025: Created Today's Specials feature for weekend specials management
+- June 21, 2025: Fixed eye button functionality in orders table with detailed order dialog
+- June 21, 2025: Started Go backend implementation for performance optimization
+- June 21, 2025: Added unit testing framework for order progress tracking
 
 ## Changelog
 - June 21, 2025: Initial setup
 - June 21, 2025: Added multi-restaurant architecture with subscription management
+- June 21, 2025: Completed comprehensive restaurant management system with portal, notifications, and specials
 
 ## User Preferences
 

@@ -29,6 +29,8 @@ import { cn, formatCurrency, formatTime, getOrderStatusColor, getOrderStatusText
 import OrderCard from "@/components/OrderCard";
 import ProductManagement from "@/components/ProductManagement";
 import SubscriptionManagement from "@/components/SubscriptionManagement";
+import AdminNotifications from "@/components/AdminNotifications";
+import TodaysSpecials from "@/components/TodaysSpecials";
 import restaurantConfig from "@/config/restaurant.json";
 import type { Order, Restaurant } from "@shared/schema";
 
@@ -188,12 +190,16 @@ export default function AdminApp() {
         </div>
       </div>
 
+      {/* Admin Notifications */}
+      <AdminNotifications restaurantId={restaurantId} />
+
       <div className="p-6">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="specials">Today's Specials</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -501,6 +507,10 @@ export default function AdminApp() {
 
             {/* Subscription Management */}
             {restaurant && <SubscriptionManagement restaurant={restaurant} />}
+          </TabsContent>
+
+          <TabsContent value="specials" className="space-y-6">
+            <TodaysSpecials restaurantId={restaurantId} />
           </TabsContent>
         </Tabs>
       </div>

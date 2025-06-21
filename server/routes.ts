@@ -146,6 +146,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get order by number
+  app.get("/api/orders/by-number/:orderNumber", async (req, res) => {
+    try {
+      const orderNumber = req.params.orderNumber;
+      const order = await storage.getOrderByNumber(orderNumber);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch order" });
+    }
+  });
+
   // Upgrade restaurant subscription
   app.post("/api/restaurant/:id/upgrade", async (req, res) => {
     try {

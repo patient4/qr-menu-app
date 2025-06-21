@@ -14,6 +14,7 @@ import { ShoppingCart, Plus, Minus, Utensils, QrCode, MapPin, Clock, Star } from
 import { cn, formatCurrency, calculateOrderTotal } from "@/lib/utils";
 import MenuCard from "@/components/MenuCard";
 import CartSidebar from "@/components/CartSidebar";
+import OrderProgress from "@/components/OrderProgress";
 import restaurantConfig from "@/config/restaurant.json";
 import type { MenuItem, MenuCategory, Restaurant } from "@shared/schema";
 
@@ -27,6 +28,7 @@ export default function CustomerApp() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState<string>("");
   const [orderType, setOrderType] = useState<"dine-in" | "takeaway">("dine-in");
+  const [currentOrderNumber, setCurrentOrderNumber] = useState<string>("");
   
   const { toast } = useToast();
   const restaurantId = restaurantConfig.id;
@@ -111,12 +113,13 @@ export default function CustomerApp() {
       const response = await apiRequest("POST", "/api/orders", orderData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setCart([]);
       setIsCartOpen(false);
+      setCurrentOrderNumber(data.orderNumber);
       toast({
         title: "Order placed successfully!",
-        description: "Your order has been sent to the kitchen.",
+        description: "Your order has been sent to the kitchen. Track your progress with the floating button.",
       });
     },
     onError: () => {
@@ -348,6 +351,9 @@ export default function CustomerApp() {
         onOrderTypeChange={setOrderType}
         onTableNumberChange={setTableNumber}
       />
+
+      {/* Order Progress Tracker */}
+      <OrderProgress orderNumber={currentOrderNumber} />
 
       <div className="h-24"></div>
     </div>

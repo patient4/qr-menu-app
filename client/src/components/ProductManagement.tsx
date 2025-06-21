@@ -139,10 +139,12 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const imageUrl = reader.result as string;
+        setImagePreview(imageUrl);
+        // Set the image URL in the form for saving
+        form.setValue("imageUrl", imageUrl);
       };
       reader.readAsDataURL(file);
-      form.setValue("imageFile", file);
     }
   };
 
