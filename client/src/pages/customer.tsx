@@ -37,6 +37,16 @@ export default function CustomerApp() {
   const { toast } = useToast();
   const restaurantId = restaurantConfig.id;
 
+  // Extract table number from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableParam = urlParams.get('table');
+    if (tableParam) {
+      setTableNumber(tableParam);
+      setOrderType('dine-in');
+    }
+  }, []);
+
   // WebSocket for real-time order updates
   useWebSocket((message) => {
     if (message.type === "ORDER_STATUS_UPDATE" && message.data.orderNumber === currentOrderNumber) {
