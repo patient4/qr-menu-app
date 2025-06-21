@@ -30,8 +30,9 @@ export default function QRCodeGenerator({ restaurantId }: QRCodeGeneratorProps) 
   const generateQRCode = async (tableNumber: string) => {
     setIsGenerating(true);
     try {
-      // Create the ordering URL with table parameter
+      // Create the ordering URL with table parameter - production ready
       const baseUrl = window.location.origin;
+      const isProduction = baseUrl.includes('.replit.app') || !baseUrl.includes('localhost');
       const orderingUrl = `${baseUrl}/customer?restaurant=${restaurantId}&table=${tableNumber}`;
       
       // Generate QR code
