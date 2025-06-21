@@ -42,10 +42,20 @@ export default function AuthLogin({ onLogin, userType }: AuthLoginProps) {
       const data = await response.json();
       
       setStep("otp");
-      toast({
-        title: "OTP Sent",
-        description: `Verification code sent to ${phoneNumber}`,
-      });
+      
+      // Show OTP in development mode
+      if (data.otp) {
+        toast({
+          title: "OTP Sent (Development Mode)",
+          description: `Your verification code is: ${data.otp}`,
+          duration: 10000,
+        });
+      } else {
+        toast({
+          title: "OTP Sent",
+          description: `Verification code sent to ${phoneNumber}`,
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Failed to Send OTP",
