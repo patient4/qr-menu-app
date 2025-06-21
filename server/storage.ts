@@ -46,6 +46,10 @@ export interface IStorage {
     avgPrepTime: number;
     popularItems: Array<{ name: string; count: number }>;
   }>;
+  
+  // Super Admin operations
+  getAllRestaurants(): Promise<Restaurant[]>;
+  getAllOrders(): Promise<Order[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -440,6 +444,15 @@ export class MemStorage implements IStorage {
     
     return { orderCount, revenue, avgPrepTime, popularItems };
   }
+
+  async getAllRestaurants(): Promise<Restaurant[]> {
+    return Array.from(this.restaurants.values());
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    return Array.from(this.orders.values())
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -627,6 +640,17 @@ export class DatabaseStorage implements IStorage {
       .slice(0, 3);
     
     return { orderCount, revenue, avgPrepTime, popularItems };
+  }
+
+  async getAllRestaurants(): Promise<Restaurant[]> {
+    return await db.select().from(restaurants);
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .orderBy(orders.createdAt);
   }
 }
 

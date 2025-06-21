@@ -116,6 +116,10 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Fixed eye button functionality in orders table with detailed order dialog
 - June 21, 2025: Started Go backend implementation for performance optimization
 - June 21, 2025: Added unit testing framework for order progress tracking
+- June 21, 2025: Fixed WebSocket integration for real-time order status updates (eliminated delays)
+- June 21, 2025: Enhanced customer satisfaction features with call waiter, feedback, and special requests
+- June 21, 2025: Created comprehensive Super Admin portal for multi-restaurant management
+- June 21, 2025: Added browser notifications, estimated cooking times, and real-time status alerts
 
 ## Changelog
 - June 21, 2025: Initial setup

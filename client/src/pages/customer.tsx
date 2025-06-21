@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Plus, Minus, Utensils, QrCode, MapPin, Clock, Star } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Utensils, QrCode, MapPin, Clock, Star, Bell, Sparkles, ChefHat } from "lucide-react";
 import { cn, formatCurrency, calculateOrderTotal } from "@/lib/utils";
+import { useWebSocket } from "@/lib/websocket";
 import MenuCard from "@/components/MenuCard";
 import CartSidebar from "@/components/CartSidebar";
 import OrderProgress from "@/components/OrderProgress";
@@ -29,9 +30,61 @@ export default function CustomerApp() {
   const [tableNumber, setTableNumber] = useState<string>("");
   const [orderType, setOrderType] = useState<"dine-in" | "takeaway">("dine-in");
   const [currentOrderNumber, setCurrentOrderNumber] = useState<string>("");
+  const [orderStatus, setOrderStatus] = useState<string>("");
+  const [estimatedTime, setEstimatedTime] = useState<number>(0);
+  const [showOrderNotification, setShowOrderNotification] = useState(false);
   
   const { toast } = useToast();
   const restaurantId = restaurantConfig.id;
+
+  // WebSocket for real-time order updates
+  useWebSocket((message) => {
+    if (message.type === "ORDER_STATUS_UPDATE" && message.data.orderNumber === currentOrderNumber) {
+      setOrderStatus(message.data.status);
+      
+      // Update cache directly for instant UI updates
+      queryClient.setQueryData([`/api/orders/by-number/${currentOrderNumber}`], message.data);
+      
+      // Show notification for status updates
+      setShowOrderNotification(true);
+      setTimeout(() => setShowOrderNotification(false), 3000);
+      
+      // Status-specific notifications
+      switch (message.data.status) {
+        case 'preparing':
+          toast({
+            title: "🔥 Your order is being prepared!",
+            description: "Our chefs are working on your delicious meal",
+          });
+          setEstimatedTime(15); // 15 minutes estimated
+          break;
+        case 'ready':
+          toast({
+            title: "🎉 Your order is ready!",
+            description: orderType === 'dine-in' ? "We'll serve it to your table shortly" : "Please come to the counter to collect",
+          });
+          // Play notification sound
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Order Ready!', {
+              body: 'Your order is ready for pickup/serving',
+              icon: '/favicon.ico'
+            });
+          }
+          break;
+        case 'completed':
+          toast({
+            title: "✅ Order served successfully!",
+            description: "Enjoy your meal! Please rate your experience",
+          });
+          // Reset tracking after completion
+          setTimeout(() => {
+            setCurrentOrderNumber("");
+            setOrderStatus("");
+          }, 5000);
+          break;
+      }
+    }
+  });
 
   // Get table number from URL params
   useEffect(() => {
@@ -352,8 +405,86 @@ export default function CustomerApp() {
         onTableNumberChange={setTableNumber}
       />
 
-      {/* Order Progress Tracker */}
-      <OrderProgress orderNumber={currentOrderNumber} />
+      {/* Enhanced Order Progress with Real-time Features */}
+      {currentOrderNumber && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className={`transition-all duration-300 ${showOrderNotification ? 'animate-pulse' : ''}`}>
+            <OrderProgress orderNumber={currentOrderNumber} />
+          </div>
+          
+          {/* Real-time Status Notification */}
+          {showOrderNotification && (
+            <div className="absolute -top-12 right-0 bg-primary text-white px-3 py-1 rounded-lg text-sm font-medium animate-bounce">
+              Status Updated!
+            </div>
+          )}
+          
+          {/* Estimated Time Display */}
+          {estimatedTime > 0 && orderStatus === 'preparing' && (
+            <div className="absolute -top-8 -left-20 bg-orange-500 text-white px-2 py-1 rounded-lg text-xs font-medium">
+              <Clock className="w-3 h-3 inline mr-1" />
+              ~{estimatedTime} min
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Customer Satisfaction Tools */}
+      <div className="fixed bottom-4 left-4 z-40 space-y-2">
+        {/* Call Waiter - Dine-in Only */}
+        {orderType === 'dine-in' && currentOrderNumber && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white shadow-lg hover:bg-yellow-50 border-yellow-300"
+            onClick={() => {
+              toast({
+                title: "Waiter called for Table " + tableNumber,
+                description: "Someone will assist you shortly",
+              });
+            }}
+          >
+            <Bell className="w-4 h-4 mr-2" />
+            Call Waiter
+          </Button>
+        )}
+        
+        {/* Quick Feedback */}
+        {currentOrderNumber && orderStatus === 'completed' && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white shadow-lg hover:bg-green-50 border-green-300"
+            onClick={() => {
+              toast({
+                title: "Thank you for dining with us!",
+                description: "Your feedback helps us improve",
+              });
+            }}
+          >
+            <Star className="w-4 h-4 mr-2" />
+            Rate Us
+          </Button>
+        )}
+
+        {/* Special Requests */}
+        {currentOrderNumber && orderStatus !== 'completed' && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-white shadow-lg hover:bg-blue-50 border-blue-300"
+            onClick={() => {
+              toast({
+                title: "Special request noted",
+                description: "Kitchen staff has been informed",
+              });
+            }}
+          >
+            <ChefHat className="w-4 h-4 mr-2" />
+            Special Request
+          </Button>
+        )}
+      </div>
 
       <div className="h-24"></div>
     </div>

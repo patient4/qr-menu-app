@@ -274,6 +274,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Super Admin Routes
+  app.get("/api/super-admin/stats", async (req, res) => {
+    try {
+      // Get all restaurants for counting
+      const allRestaurants = await storage.getAllRestaurants();
+      const now = new Date();
+      
+      let totalRevenue = 0;
+      let totalOrders = 0;
+      let activeSubscriptions = 0;
+      let trialRestaurants = 0;
+      let expiredSubscriptions = 0;
+
+      // Calculate stats from all restaurants
+      for (const restaurant of allRestaurants) {
+        const stats = await storage.getTodayStats(restaurant.id);
+        totalRevenue += stats.revenue;
+        totalOrders += stats.orderCount;
+
+        // Check subscription status
+        if (restaurant.subscriptionEndDate) {
+          const endDate = new Date(restaurant.subscriptionEndDate);
+          const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysLeft < 0) {
+            expiredSubscriptions++;
+          } else if (daysLeft <= 30) {
+            trialRestaurants++;
+          } else {
+            activeSubscriptions++;
+          }
+        } else {
+          expiredSubscriptions++;
+        }
+      }
+
+      res.json({
+        totalRestaurants: allRestaurants.length,
+        activeSubscriptions,
+        totalRevenue,
+        totalOrders,
+        trialRestaurants,
+        expiredSubscriptions
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch super admin stats" });
+    }
+  });
+
+  app.get("/api/super-admin/restaurants", async (req, res) => {
+    try {
+      const restaurants = await storage.getAllRestaurants();
+      res.json(restaurants);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch restaurants" });
+    }
+  });
+
+  app.get("/api/super-admin/orders", async (req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch all orders" });
+    }
+  });
+
+  app.get("/api/super-admin/analytics", async (req, res) => {
+    try {
+      const restaurants = await storage.getAllRestaurants();
+      const analytics = [];
+
+      for (const restaurant of restaurants) {
+        const stats = await storage.getTodayStats(restaurant.id);
+        const orders = await storage.getTodayOrders(restaurant.id);
+        
+        analytics.push({
+          restaurantId: restaurant.id,
+          name: restaurant.name,
+          ordersToday: stats.orderCount,
+          revenueToday: stats.revenue,
+          avgOrderValue: orders.length > 0 ? stats.revenue / orders.length : 0,
+          subscriptionStatus: restaurant.isActive ? 'active' : 'inactive',
+          lastActivity: restaurant.updatedAt || restaurant.createdAt
+        });
+      }
+
+      res.json(analytics);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  app.patch("/api/super-admin/restaurants/:id/subscription", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const { action } = req.body;
+      
+      let updateData: any = {};
+      const now = new Date();
+
+      switch (action) {
+        case 'activate':
+          updateData = { 
+            isActive: true,
+            subscriptionEndDate: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 1 year
+          };
+          break;
+        case 'suspend':
+          updateData = { isActive: false };
+          break;
+        case 'extend_trial':
+          updateData = { 
+            subscriptionEndDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days
+          };
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid action" });
+      }
+
+      const restaurant = await storage.updateRestaurant(restaurantId, updateData);
+      
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Broadcast subscription update
+      broadcast({
+        type: 'SUBSCRIPTION_UPDATE',
+        data: {
+          restaurantId,
+          restaurantName: restaurant.name,
+          action,
+          newStatus: restaurant.isActive
+        }
+      });
+
+      res.json(restaurant);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update subscription" });
+    }
+  });
+
   app.get("/api/restaurant/:id/orders/today", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.id);
