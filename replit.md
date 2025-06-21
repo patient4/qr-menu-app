@@ -130,6 +130,8 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Fixed order tracking persistence - bottom tracking remains after page reload for guests and logged-in users
 - June 21, 2025: Created comprehensive Super Admin panel at /super-admin route for managing multiple restaurants
 - June 21, 2025: Added platform-wide analytics, restaurant management, and subscription controls
+- June 21, 2025: Implemented streamlined guest welcome flow - name entry with sweet welcome animation
+- June 21, 2025: Removed login complexity for customers - simple name capture creates personalized ordering experience
 
 ## Production Deployment
 

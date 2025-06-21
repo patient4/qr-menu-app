@@ -33,6 +33,9 @@ export default function CustomerApp() {
   const [orderStatus, setOrderStatus] = useState<string>("");
   const [estimatedTime, setEstimatedTime] = useState<number>(0);
   const [showOrderNotification, setShowOrderNotification] = useState(false);
+  const [customerName, setCustomerName] = useState<string>("");
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [hasEnteredName, setHasEnteredName] = useState(false);
   
   const { toast } = useToast();
   const restaurantId = restaurantConfig.id;
@@ -50,11 +53,17 @@ export default function CustomerApp() {
     const savedOrderNumber = localStorage.getItem('currentOrderNumber');
     const savedOrderStatus = localStorage.getItem('currentOrderStatus');
     const savedEstimatedTime = localStorage.getItem('estimatedTime');
+    const savedCustomerName = localStorage.getItem('customerName');
     
     if (savedOrderNumber) {
       setCurrentOrderNumber(savedOrderNumber);
       setOrderStatus(savedOrderStatus || 'pending');
       setEstimatedTime(parseInt(savedEstimatedTime || '0'));
+    }
+
+    if (savedCustomerName) {
+      setCustomerName(savedCustomerName);
+      setHasEnteredName(true);
     }
   }, []);
 
@@ -241,13 +250,110 @@ export default function CustomerApp() {
       serviceCharge: serviceChargeAmount.toFixed(2),
       gst: gstAmount.toFixed(2),
       total: total.toFixed(2),
-      customerName: customerInfo.name || null,
+      customerName: customerName || customerInfo.name || null,
       customerPhone: customerInfo.phone || null,
       notes: customerInfo.notes || null,
     };
 
     placeOrderMutation.mutate(orderData);
   };
+
+  const handleNameSubmit = (name: string) => {
+    setCustomerName(name);
+    setHasEnteredName(true);
+    setShowWelcome(true);
+    localStorage.setItem('customerName', name);
+    
+    // Show welcome animation for 2 seconds
+    setTimeout(() => {
+      setShowWelcome(false);
+    }, 2000);
+  };
+
+  // Show name entry screen if user hasn't entered name
+  if (!hasEnteredName) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <Utensils className="text-white text-3xl" />
+            </div>
+            <h1 className="text-3xl font-bold text-orange-600 mb-2">
+              🌶️ Icy Spicy Tadka
+            </h1>
+            <p className="text-gray-600">Pure Vegetarian Restaurant</p>
+          </div>
+
+          <Card className="shadow-lg">
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome!</h2>
+                <p className="text-gray-600">What should we call you?</p>
+              </div>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                const name = formData.get('name') as string;
+                if (name.trim()) {
+                  handleNameSubmit(name.trim());
+                }
+              }} className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    Your Name
+                  </Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="Enter your name"
+                    className="mt-1"
+                    required
+                    autoFocus
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3"
+                >
+                  Start Ordering
+                </Button>
+              </form>
+              
+              <div className="mt-4 text-center text-sm text-gray-500">
+                <p>Ready to explore our delicious menu?</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show welcome animation
+  if (showWelcome) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
+        <div className="text-center animate-pulse">
+          <div className="w-24 h-24 gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+            <Utensils className="text-white text-4xl" />
+          </div>
+          <h1 className="text-4xl font-bold text-orange-600 mb-4 animate-fadeIn">
+            Welcome, {customerName}!
+          </h1>
+          <p className="text-xl text-gray-700 animate-fadeIn">
+            Let's explore our delicious menu together
+          </p>
+          <div className="mt-6 flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -262,7 +368,7 @@ export default function CustomerApp() {
               {restaurant?.name || restaurantConfig.name}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {orderType === "dine-in" ? `Table #${tableNumber}` : "Takeaway"} • {orderType}
+              Hello {customerName}! • {orderType === "dine-in" ? `Table #${tableNumber}` : "Takeaway"}
             </p>
           </div>
         </div>
