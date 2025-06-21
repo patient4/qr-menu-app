@@ -11,6 +11,12 @@ export const users = pgTable("users", {
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  slug: text("slug").notNull().unique(), // for custom domains like icy-spicy-tadka.replit.app
+  description: text("description"),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  logo: text("logo"), // URL to logo image
   primaryColor: text("primary_color").notNull().default("#FF6B35"),
   secondaryColor: text("secondary_color").notNull().default("#C62828"),
   accentColor: text("accent_color").notNull().default("#FFB300"),
@@ -19,8 +25,12 @@ export const restaurants = pgTable("restaurants", {
   gst: decimal("gst", { precision: 5, scale: 2 }).notNull().default("5.00"),
   orderModes: text("order_modes").array().notNull().default(["dine-in", "takeaway"]),
   isActive: boolean("is_active").notNull().default(true),
+  trialStartDate: timestamp("trial_start_date").defaultNow(),
   subscriptionEndDate: timestamp("subscription_end_date"),
+  planType: text("plan_type").notNull().default("trial"), // trial, basic, premium
+  monthlyRate: decimal("monthly_rate", { precision: 10, scale: 2 }).default("4999.00"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const menuCategories = pgTable("menu_categories", {

@@ -105,8 +105,15 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - **Static assets**: Served from `dist/public`
 - **API endpoints**: Express server with `/api` prefix
 
+## Recent Changes
+- June 21, 2025: Enhanced restaurant schema with multi-restaurant support
+- June 21, 2025: Added comprehensive product management system with photo upload
+- June 21, 2025: Implemented subscription management with 30-day free trial
+- June 21, 2025: Created admin dashboard with product editing capabilities
+
 ## Changelog
-- June 21, 2025. Initial setup
+- June 21, 2025: Initial setup
+- June 21, 2025: Added multi-restaurant architecture with subscription management
 
 ## User Preferences
 

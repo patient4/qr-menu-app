@@ -7,6 +7,8 @@ import {
   type Order, type InsertOrder,
   ORDER_STATUSES
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -83,6 +85,12 @@ export class MemStorage implements IStorage {
     const restaurant: Restaurant = {
       id: 1,
       name: "Icy Spicy Tadka",
+      slug: "icy-spicy-tadka",
+      description: "Authentic Pure Vegetarian Indian Restaurant",
+      address: "123 Spice Street, Flavor Town",
+      phone: "+91 98765 43210",
+      email: "contact@icyspicytadka.com",
+      logo: null,
       primaryColor: "#FF6B35",
       secondaryColor: "#C62828",
       accentColor: "#FFB300",
@@ -91,8 +99,12 @@ export class MemStorage implements IStorage {
       gst: "5.00",
       orderModes: ["dine-in", "takeaway"],
       isActive: true,
+      trialStartDate: new Date(),
       subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      planType: "trial",
+      monthlyRate: "4999.00",
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
     this.restaurants.set(1, restaurant);
     this.currentIds.restaurant = 2;
@@ -396,6 +408,194 @@ export class MemStorage implements IStorage {
         order.restaurantId === restaurantId &&
         order.createdAt && new Date(order.createdAt) >= today
       );
+  }
+
+  async getTodayStats(restaurantId: number): Promise<{
+    orderCount: number;
+    revenue: number;
+    avgPrepTime: number;
+    popularItems: Array<{ name: string; count: number }>;
+  }> {
+    const todayOrders = await this.getTodayOrders(restaurantId);
+    
+    const orderCount = todayOrders.length;
+    const revenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.total), 0);
+    
+    // Calculate average prep time (simplified)
+    const avgPrepTime = 12; // minutes - simplified for demo
+    
+    // Calculate popular items
+    const itemCounts = new Map<string, number>();
+    todayOrders.forEach(order => {
+      order.items.forEach(item => {
+        const currentCount = itemCounts.get(item.name) || 0;
+        itemCounts.set(item.name, currentCount + item.quantity);
+      });
+    });
+    
+    const popularItems = Array.from(itemCounts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+    
+    return { orderCount, revenue, avgPrepTime, popularItems };
+  }
+}
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getRestaurant(id: number): Promise<Restaurant | undefined> {
+    const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.id, id));
+    return restaurant || undefined;
+  }
+
+  async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
+    const [newRestaurant] = await db
+      .insert(restaurants)
+      .values(restaurant)
+      .returning();
+    return newRestaurant;
+  }
+
+  async updateRestaurant(id: number, restaurant: Partial<InsertRestaurant>): Promise<Restaurant | undefined> {
+    const [updated] = await db
+      .update(restaurants)
+      .set(restaurant)
+      .where(eq(restaurants.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getMenuCategories(restaurantId: number): Promise<MenuCategory[]> {
+    return await db
+      .select()
+      .from(menuCategories)
+      .where(eq(menuCategories.restaurantId, restaurantId))
+      .orderBy(menuCategories.displayOrder);
+  }
+
+  async createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory> {
+    const [newCategory] = await db
+      .insert(menuCategories)
+      .values(category)
+      .returning();
+    return newCategory;
+  }
+
+  async getMenuItems(restaurantId: number, categoryId?: number): Promise<MenuItem[]> {
+    if (categoryId) {
+      return await db
+        .select()
+        .from(menuItems)
+        .where(and(
+          eq(menuItems.restaurantId, restaurantId),
+          eq(menuItems.categoryId, categoryId)
+        ))
+        .orderBy(menuItems.displayOrder);
+    }
+    
+    return await db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.restaurantId, restaurantId))
+      .orderBy(menuItems.displayOrder);
+  }
+
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    const [item] = await db.select().from(menuItems).where(eq(menuItems.id, id));
+    return item || undefined;
+  }
+
+  async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
+    const [newItem] = await db
+      .insert(menuItems)
+      .values(item)
+      .returning();
+    return newItem;
+  }
+
+  async updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
+    const [updated] = await db
+      .update(menuItems)
+      .set(item)
+      .where(eq(menuItems.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getOrders(restaurantId: number, status?: string): Promise<Order[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(orders)
+        .where(and(
+          eq(orders.restaurantId, restaurantId),
+          eq(orders.status, status)
+        ))
+        .orderBy(orders.createdAt);
+    }
+    
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.restaurantId, restaurantId))
+      .orderBy(orders.createdAt);
+  }
+
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order || undefined;
+  }
+
+  async getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
+    return order || undefined;
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const [newOrder] = await db
+      .insert(orders)
+      .values(order)
+      .returning();
+    return newOrder;
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const [updated] = await db
+      .update(orders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(orders.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getTodayOrders(restaurantId: number): Promise<Order[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.restaurantId, restaurantId))
+      .orderBy(orders.createdAt);
   }
 
   async getTodayStats(restaurantId: number): Promise<{

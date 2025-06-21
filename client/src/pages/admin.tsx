@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { cn, formatCurrency, formatTime, getOrderStatusColor, getOrderStatusText } from "@/lib/utils";
 import OrderCard from "@/components/OrderCard";
+import ProductManagement from "@/components/ProductManagement";
+import SubscriptionManagement from "@/components/SubscriptionManagement";
 import restaurantConfig from "@/config/restaurant.json";
 import type { Order, Restaurant } from "@shared/schema";
 
@@ -188,9 +190,10 @@ export default function AdminApp() {
 
       <div className="p-6">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -394,6 +397,10 @@ export default function AdminApp() {
             </div>
           </TabsContent>
 
+          <TabsContent value="products">
+            <ProductManagement restaurantId={restaurant?.id || 1} />
+          </TabsContent>
+
           <TabsContent value="settings" className="space-y-6">
             {/* Restaurant Configuration */}
             <Card>
@@ -492,24 +499,8 @@ export default function AdminApp() {
               </CardContent>
             </Card>
 
-            {/* Subscription Status */}
-            <Card className="gradient-primary text-white">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-poppins font-bold text-xl mb-2">Subscription Status</h3>
-                    <p className="opacity-90 mb-1">Free Trial • 18 days remaining</p>
-                    <p className="text-sm opacity-75">Upgrade to Pro for ₹4,999/month</p>
-                  </div>
-                  <div className="text-right">
-                    <Button className="bg-white text-primary font-semibold mb-2">
-                      Upgrade Now
-                    </Button>
-                    <div className="text-sm opacity-75">Next billing: Dec 15, 2024</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Subscription Management */}
+            {restaurant && <SubscriptionManagement restaurant={restaurant} />}
           </TabsContent>
         </Tabs>
       </div>

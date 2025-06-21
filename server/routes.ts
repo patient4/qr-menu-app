@@ -103,6 +103,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create menu item
+  app.post("/api/menu-items", async (req, res) => {
+    try {
+      const item = await storage.createMenuItem(req.body);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create menu item" });
+    }
+  });
+
+  // Update menu item
+  app.patch("/api/menu-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const item = await storage.updateMenuItem(id, req.body);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      
+      res.json(item);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update menu item" });
+    }
+  });
+
+  // Delete menu item
+  app.delete("/api/menu-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      // Set isAvailable to false instead of actual deletion for order history
+      const item = await storage.updateMenuItem(id, { isAvailable: false });
+      
+      if (!item) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      
+      res.json({ message: "Menu item deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete menu item" });
+    }
+  });
+
+  // Upgrade restaurant subscription
+  app.post("/api/restaurant/:id/upgrade", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { planType } = req.body;
+      
+      // Calculate subscription end date (1 month from now)
+      const subscriptionEndDate = new Date();
+      subscriptionEndDate.setMonth(subscriptionEndDate.getMonth() + 1);
+      
+      const restaurant = await storage.updateRestaurant(id, {
+        planType: planType || "premium",
+        subscriptionEndDate,
+        isActive: true,
+      });
+      
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      res.json(restaurant);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to upgrade subscription" });
+    }
+  });
+
   // Order routes
   app.post("/api/orders", async (req, res) => {
     try {
