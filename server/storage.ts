@@ -115,55 +115,85 @@ export class MemStorage implements IStorage {
       {
         id: 1, restaurantId: 1, categoryId: 1, name: "Butter Paratha", 
         description: "Flaky, buttery layers of perfection", price: "45.00",
-        imageUrl: "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        imageUrl: "https://images.unsplash.com/photo-1630431341973-02c9924c6e59?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
         isVeg: true, isPopular: false, isAvailable: true, preparationTime: 10, displayOrder: 1
       },
       {
         id: 2, restaurantId: 1, categoryId: 3, name: "Dal Makhani",
         description: "Rich, creamy black lentils slow-cooked to perfection", price: "180.00",
-        imageUrl: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
-        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 20, displayOrder: 1
+        imageUrl: "https://images.unsplash.com/photo-1603894584373-5ac82605b905?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 20, displayOrder: 1
       },
       {
         id: 3, restaurantId: 1, categoryId: 4, name: "Paneer Tikka",
         description: "Marinated cottage cheese grilled to perfection", price: "220.00",
-        imageUrl: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        imageUrl: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
         isVeg: true, isPopular: true, isAvailable: true, preparationTime: 15, displayOrder: 1
       },
       {
         id: 4, restaurantId: 1, categoryId: 3, name: "Rajma Chawal",
         description: "Comfort food at its finest - kidney beans with rice", price: "160.00",
-        imageUrl: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        imageUrl: "https://images.unsplash.com/photo-1596797038530-2c107229654b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
         isVeg: true, isPopular: false, isAvailable: true, preparationTime: 15, displayOrder: 2
       },
       {
         id: 5, restaurantId: 1, categoryId: 5, name: "Mango Lassi",
         description: "Refreshing blend of yogurt and sweet mangoes", price: "85.00",
-        imageUrl: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        imageUrl: "https://images.unsplash.com/photo-1600626335629-2d4ec653cdf3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
         isVeg: true, isPopular: false, isAvailable: true, preparationTime: 5, displayOrder: 1
       },
       {
         id: 6, restaurantId: 1, categoryId: 4, name: "Chole Bhature",
         description: "Fluffy bread with spicy chickpea curry", price: "140.00",
-        imageUrl: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
-        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 18, displayOrder: 2
+        imageUrl: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 18, displayOrder: 2
       },
       {
         id: 7, restaurantId: 1, categoryId: 4, name: "Masala Dosa",
         description: "Crispy rice crepe with spiced potato filling", price: "120.00",
-        imageUrl: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        imageUrl: "https://images.unsplash.com/photo-1694172848448-7ad1e4b22234?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
         isVeg: true, isPopular: false, isAvailable: true, preparationTime: 12, displayOrder: 3
       },
       {
         id: 8, restaurantId: 1, categoryId: 6, name: "Gulab Jamun",
         description: "Soft milk dumplings in cardamom syrup", price: "60.00",
-        imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200",
+        imageUrl: "https://images.unsplash.com/photo-1571091655789-405eb7a3a3a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
         isVeg: true, isPopular: false, isAvailable: true, preparationTime: 5, displayOrder: 1
+      },
+      {
+        id: 9, restaurantId: 1, categoryId: 1, name: "Aloo Paratha",
+        description: "Stuffed potato paratha with fresh herbs", price: "50.00",
+        imageUrl: "https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 12, displayOrder: 2
+      },
+      {
+        id: 10, restaurantId: 1, categoryId: 2, name: "Punjabi Thali",
+        description: "Complete meal with dal, sabzi, roti, rice, pickle", price: "280.00",
+        imageUrl: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 25, displayOrder: 1
+      },
+      {
+        id: 11, restaurantId: 1, categoryId: 3, name: "Palak Paneer",
+        description: "Creamy spinach curry with cottage cheese", price: "200.00",
+        imageUrl: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 18, displayOrder: 3
+      },
+      {
+        id: 12, restaurantId: 1, categoryId: 5, name: "Masala Chai",
+        description: "Traditional spiced tea with milk", price: "25.00",
+        imageUrl: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: false, isAvailable: true, preparationTime: 3, displayOrder: 2
+      },
+      {
+        id: 13, restaurantId: 1, categoryId: 4, name: "Samosa",
+        description: "Crispy triangular pastry with spiced potato filling", price: "30.00",
+        imageUrl: "https://images.unsplash.com/photo-1601050690597-df0568f70950?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300&q=80",
+        isVeg: true, isPopular: true, isAvailable: true, preparationTime: 8, displayOrder: 4
       },
     ];
     
     items.forEach(item => this.menuItems.set(item.id, item));
-    this.currentIds.menuItem = 9;
+    this.currentIds.menuItem = 14;
   }
 
   // User operations
