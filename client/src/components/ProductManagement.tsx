@@ -64,7 +64,12 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
   // Create product mutation
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormData) => {
-      const response = await apiRequest("POST", "/api/menu-items", data);
+      const response = await fetch('/api/menu-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create product');
       return response.json();
     },
     onSuccess: () => {
@@ -89,7 +94,12 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
   // Update product mutation
   const updateProductMutation = useMutation({
     mutationFn: async (data: ProductFormData & { id: number }) => {
-      const response = await apiRequest("PATCH", `/api/menu-items/${data.id}`, data);
+      const response = await fetch(`/api/menu-items/${data.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update product');
       return response.json();
     },
     onSuccess: () => {
@@ -451,6 +461,7 @@ export default function ProductManagement({ restaurantId }: ProductManagementPro
                   variant="outline"
                   onClick={() => handleEditProduct(item)}
                   className="flex-1"
+                  data-testid="edit-product"
                 >
                   <Edit className="w-3 h-3 mr-1" />
                   Edit

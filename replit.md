@@ -120,6 +120,7 @@ This is a full-stack web application for "Icy Spicy Tadka", a pure-vegetarian re
 - June 21, 2025: Enhanced customer satisfaction features with call waiter, feedback, and special requests
 - June 21, 2025: Created comprehensive Super Admin portal for multi-restaurant management
 - June 21, 2025: Added browser notifications, estimated cooking times, and real-time status alerts
+- June 21, 2025: Fixed critical product add/edit functionality with proper API endpoints and comprehensive unit testing
 
 ## Changelog
 - June 21, 2025: Initial setup
